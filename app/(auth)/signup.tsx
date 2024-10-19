@@ -1,5 +1,5 @@
 import { View, Text, Button, TextInput } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link } from 'expo-router';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -32,7 +32,7 @@ export default function Signup() {
       <Button title="Sign Up" onPress={() => {
         
         signUp(email, password)
-        router.replace('/login')
+        
 
       }} />
       <Link href="/login" style={{ marginTop: 16 }}>Already have an account? Log in</Link>

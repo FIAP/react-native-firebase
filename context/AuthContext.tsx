@@ -1,14 +1,11 @@
+import { auth } from "@/firebase/config"
+import { router } from "expo-router"
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, UserCredential } from "firebase/auth"
 import { createContext, ReactNode, useContext, useState } from "react"
 
-interface User {
-    email: string
-    password: string
-}
-
 interface IAuthContext {
-    user: User | null
-    users: User[]
-    login: (email: string, password: string) => boolean
+    user: UserCredential | null
+    login: (email: string, password: string) => Promise<boolean>
     signUp: (email: string, password: string) => void
     logout: () => void
     isAuthenticated: boolean
@@ -17,41 +14,48 @@ interface IAuthContext {
 const AuthContext = createContext<IAuthContext | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null)
-    const [users, setUsers] = useState<User[]>([])
+    const [user, setUser] = useState<UserCredential | null>(null)
     const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-    const login = (email: string, password: string) => {
-        const foundUser = users.find(u => u.email === email && u.password === password)
-        if (foundUser) {
-            setUser(user)
+    const login = async (email: string, password: string) => {
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password)
+            setUser(userCredential)
             setIsAuthenticated(true)
             console.log('AuthProvider :: login - usuário logado com sucesso')
             return true
-        } 
-        console.log('AuthProvider :: login - usuário não encontrado')
-        return false
+        } catch (error) {
+            
+            console.log('AuthProvider :: login - falha ao logar usuário', error)
+            return false
+        }
     }
 
     const signUp = (email: string, password: string) => {
-        setUsers([...users, { email, password }])
-        console.log('AuthProvider :: signUp - usuário cadastrado com sucesso')
+        createUserWithEmailAndPassword(auth, email, password)
+            .then(() => {
+                router.replace('/login')
+                console.log('AuthProvider :: signUp - usuário cadastrado com sucesso')
+            })
+            .catch(err => {
+                console.log('AuthProvider :: signUp - falha', err)
+            })
     }
 
     const logout = () => {
         console.log('AuthProvider :: logout - usuário deslogado com sucesso')
+        auth.signOut()
         setUser(null)
         setIsAuthenticated(false)
     }
 
     return <AuthContext.Provider value={{
         user,
-        users,
         login,
         signUp,
         logout,
         isAuthenticated
-    }}> 
+    }}>
         {children}
     </AuthContext.Provider>
 }
